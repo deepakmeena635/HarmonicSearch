@@ -230,8 +230,9 @@ float *resolve( int dim, float low, float high,
 			system(" sleep 3");
 			
 		}
-		if(lolly%50==0){
-			system("clear");
+
+		if (loss< nbgood*0.1 ){
+			break;
 		}
 	}
 	cout<<"------___---"<<endl;
