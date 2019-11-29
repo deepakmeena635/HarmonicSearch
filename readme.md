@@ -1,6 +1,6 @@
 # [**Harmonics Search**](https://doi.org/10.1177%2F003754970107600201)
 
-This repo contains a barly working CUDA implementation of [Harmonics Search Algorithm](https://doi.org/10.1177%2F003754970107600201) Algorithm.
+This repo contains a barly working CUDA implementation of [Harmonics Search Algorithm](https://doi.org/10.1177%2F003754970107600201).
 
 ## What's Needed: 
 - nvcc 
