@@ -4,10 +4,10 @@
 #include<malloc.h>
 #include<stdlib.h>
 #include"hsutils.h"
+#include<chrono>
 
 
 using namespace std;
-
 
 
 
@@ -20,6 +20,9 @@ float *resolve( int dim, float low, float high,
 	 * **/
 	//TODO: suggest parameters
 	//TODO: Make population dividable
+
+	auto start = std::chrono::high_resolution_clock::now();
+
 	float offset= 50.00;
 
 	float * res ;
@@ -64,7 +67,7 @@ float *resolve( int dim, float low, float high,
 	float **idek = alloc2d(nbgood, dim);
 	float *merged ;
 	float prevLoss = 3990000.0;
-	
+	int choise =0; 
 	//optimization loop
 	for(int lolly = iterations; lolly>= 18; lolly-- ){ 	//don't quote me on this
 		
@@ -118,7 +121,7 @@ float *resolve( int dim, float low, float high,
 		
 		
 	    if(randNo> rac){
-	    	cout<<"Method 1: "<<lolly;
+	    	choise =1;
 	    	cudaFree(noise);
 	    	cudaFree(rndRecs);
 	    	noise =gen_random(gen, population, dim, &pitch, -1, 1 ); 
@@ -130,8 +133,6 @@ float *resolve( int dim, float low, float high,
 		    	recObj= (float*)malloc(sizeof(float)*population);
 		    	cudaMemcpy(recObj, rndRecs, sizeof(float)*population, cudaMemcpyHostToHost);
 		    	prnt(recObj, nbgood);
-		    
-	    		
 	    	}
 //	    	//////////////////////////////////////////
 	    	
@@ -139,7 +140,7 @@ float *resolve( int dim, float low, float high,
 	    										 rndRecs,0.0, population,dim, pitch);
 	    }
 	    else if (randNo> rpa){
-	    	cout<<"Method 2:"<<lolly;
+	    	choise =1;
 	    	cudaFree(noise);
 	    	cudaFree(rndRecs);
 	    	noise =gen_random(gen, population, dim, &pitch, -1, 1 ); 
@@ -159,7 +160,7 @@ float *resolve( int dim, float low, float high,
 	    										 rndRecs,brange, population,dim, pitch);
 	    }
 	    else{
-	    	cout<<"Method 3: "<<lolly;
+	    	choise =1;
 	    	cudaFree(harmonics);
 	    	harmonics = gen_random(gen, population, dim, &pitch, low, high);
 	    }
@@ -213,10 +214,10 @@ float *resolve( int dim, float low, float high,
 	    
 	    cudaMemcpy(recObj, obj, sizeof(float)*nbgood, cudaMemcpyDeviceToHost);
 	    loss = avg_loss(recObj, nbgood);
-//	    if (loss<prevLoss){
-	    	printf("\tAVERAGE LOSS: %f\n", loss);
-//	    	prevLoss = loss; 
-//	    }
+	    if (loss<prevLoss){
+	    	printf("%d choise:%d   AVERAGE LOSS: %f\n", lolly, choise, loss);
+	    	prevLoss = loss; 
+	    }
 	   
 	    if(debugMode){
 	    	cudaMemcpy2D( &idek[0][0], dim*sizeof(float), bests, pitch*sizeof(float), 
@@ -230,37 +231,39 @@ float *resolve( int dim, float low, float high,
 			system(" sleep 3");
 			
 		}
-
+	
 		if (loss< nbgood*0.1 ){
-			break;
+				break;
 		}
 	}
-	cout<<"------___---"<<endl;
+	auto end = std::chrono::high_resolution_clock::now();
+	double time_elapsed = double(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+	std::cout << std::endl << "Elapsed Time(s): " << time_elapsed /1000<< std::endl;
+	
 	res = (float*) malloc(sizeof(float)*dim);
 	cudaMemcpy(res, bests, sizeof(float)*dim,cudaMemcpyDeviceToHost);
-	cout<<"--___----"<<endl;
+	
 	return res;
 }
 
 
 int main(){
-	int pop= 7, dim =2002;
-	int low=-2000, high =2000; 
-	int nbg =100; 
+	int iterations = 10000;
+	int dim = 128;
+	int low=-2000, high =2000; 	
+	int nbg = 8;
+	int pop = 128; //population
 	float  *result;
-	int dm;
-	cout<<"want debug mode (1:yes), population dim, "<<endl;
-	cin>>dm;
-	cin>>pop;
-	cin>>dim;
+	int dm=0;
 	
-	
-	result= resolve( dim=dim,low, high, 2.0,nbg, pop, 10000, dm);
-	cout<<"------"<<endl;
-	//float *res, int dim, float low, float high, float brange = 0.00, int nbgood =0, int population = 100, int iterations = 10000
-	cout<<endl; 
-	for(int i=0; i< dim; i++)
+	nbg = (int) pop/10 ;
+	cout<<" population: "<<pop<<" nb_g: "<<nbg<<endl;
+
+	result = resolve(dim, low, high, 0.2, nbg, pop, iterations, dm);
+	for( int i=0; i< dim; i++){
 		cout<<result[i]<<" ";
+	}	
+	
 	
 	return 0; 
 }
