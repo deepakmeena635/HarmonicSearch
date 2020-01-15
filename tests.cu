@@ -24,21 +24,25 @@ void test_gen_random(int pop, int dim, float low, float high){
 		
 	curandGenerator_t gen;
 	curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);
-	curandSetPseudoRandomGeneratorSeed(gen,1234ULL);
+	curandSetPseudoRandomGeneratorSeed(gen,551234ULL);
 	size_t pitch; 
 	
-	float* arr = gen_random(gen, pop, dim, &pitch, low, high);
 	
-	float brr[pop][dim];
-	cudaMemcpy2D(brr, dim*sizeof(float), arr, pitch*sizeof(float), dim*sizeof(float),pop, cudaMemcpyDeviceToHost);
+	for (int i=0 ; i< 4 ; i++){
 	
-	for(int i=0; i< pop; i++){
-		for(int j=0 ; j< dim; j++){
-			cout<<" "<<brr[i][j];
+		float* arr = gen_random(gen, pop, dim, &pitch, low, high);
+		float brr[pop][dim];
+		cudaMemcpy2D(brr, dim*sizeof(float), arr, pitch*sizeof(float), dim*sizeof(float),pop, cudaMemcpyDeviceToHost);
+		
+		for(int i=0; i< 10; i++){
+			for(int j=0 ; j< dim; j++){
+				cout<<" "<<brr[i][j];
+			}
+			cout<<endl; 
 		}
-		cout<<endl; 
+			
 	}
-	printf("----------------DONE////////////////////////::::::::-__-__-__-\n");
+		printf("----------------DONE////////////////////////::::::::-__-__-__-\n");
 }
 
 void test_alloc2d(){
@@ -324,11 +328,11 @@ void test_accept_better( curandGenerator_t gen){
 
 int main(){
 
-	//int pop = 7, col = 5;
+	int pop = 2048, col = 5;
 	//test_alloc2d();
 		
 	//////////////////////GEN RANDOM ///////////////////////
-	//test_gen_random(pop, col, -100.0, 100.0);
+	test_gen_random(pop, col, -1000.0, 1000.0);
 	
 	///////////////////////OBJFN////////////////////////////
 	curandGenerator_t gen;
@@ -342,6 +346,6 @@ int main(){
 	//test_sorted();
 	//test_update_harmonics();
 	//test_random_indexes(gen);
-	test_accept_better(gen);
+	//test_accept_better(gen);
 	return 0;
 }

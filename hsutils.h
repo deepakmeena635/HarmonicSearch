@@ -3,6 +3,9 @@
 #include<curand.h>
 #include<malloc.h>
 #include<stdlib.h>
+#include<math.h>
+#define pi 3.14
+#define MAX_FLOAT 999999.999
 using namespace std;
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -31,6 +34,7 @@ void prnt(float ** arr, int m, int n ){
 		printf("\n");
 	}
 }
+
 float **alloc2d(int m,int n, float *prev =NULL){
 	float * arr = (float*) malloc(sizeof(float )*m*n);
 	if (prev != NULL){
@@ -76,25 +80,24 @@ __global__ void inrange(float *pop, size_t pitch, int low, int high, int populat
 	if(index/pitch>= population){
 		return ;
 	}
-	if (dim>1000){
-		scale_vector<<<(int )dim/200+1,200>>>( pop, index, low, high, dim);
+	if (dim>1024){
+		scale_vector<<<(int )dim/512+1,512>>>( pop, index, low, high, dim);
 	}
 	else{
 		scale_vector<<<1,dim>>>( pop, index, low, high, dim);
 	}
 }
-float* gen_random(curandGenerator_t gen, int row, int col, size_t *pitch,int low,
-int high){
+float* gen_random(curandGenerator_t gen, int row, int col, size_t *pitch,int low, int high){
 
 	float *arr;
 	cudaMallocPitch(&arr, pitch, sizeof(float)*col,sizeof(float)*row);
 	curandGenerateUniform(gen, arr, *pitch*row);
-	if(col < 1000){
+	if(col < 1024){
 
 		inrange<<<1, row>>>(arr, *pitch, low, high, row, col);
 	}
 	else{
-		inrange<<<(int )row/200+1, 200>>>(arr, *pitch, low, high, row, col);
+		inrange<<<(int )row/512+1, 512>>>(arr, *pitch, low, high, row, col);
 	}
 	return arr;
 }
@@ -137,8 +140,8 @@ __global__ void sorted(float *res, float *harmonics, float *obj, float *sortedOb
 	int destIndex = countSmaller*pitch;
 	sortedObj[countSmaller] = obj[myPos];
 
-	if (dim>1000){
-		swap<<<(int)(dim/100)+1,100>>>(res, harmonics, destIndex, srcIndex, dim);
+	if (dim>10240){
+		swap<<<(int)(dim/512)+1,512>>>(res, harmonics, destIndex, srcIndex, dim);
 	}
 	else{
 		swap<<<1, dim>>>(res, harmonics,  destIndex,srcIndex, dim);
@@ -168,9 +171,9 @@ __global__ void update_harmonics( float *harmonics,float *bests,
 	int hindex = pitch*index;
 	int bindex = recIndex*pitch;
 
-	if(dim>1000){
-		int blocks = dim%100 ==0 ? (int)dim/100 : ((int)dim/100)+1;
-		harmonic_update<<<blocks, 100>>>(harmonics, bests, noise, hindex, bindex, brange,dim);
+	if(dim>1024){
+		int blocks = dim%512 ==0 ? (int)dim/512 : ((int)dim/512)+1;
+		harmonic_update<<<blocks, 512>>>(harmonics, bests, noise, hindex, bindex, brange,dim);
 	}
 	else{
 		harmonic_update<<<1, dim>>>( harmonics, bests, noise, hindex, bindex, brange, dim);
@@ -192,7 +195,7 @@ int *gen_random_indexes(curandGenerator_t gen, int row, int maxIndex){
 	int* res;
 	cudaMalloc(&res, sizeof(int)*row);
 
-	if(row< 1000){
+	if(row< 1024){
 		cast_to_int<<<1, row>>>(res, arr,row, maxIndex );
 	}
 	else{

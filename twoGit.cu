@@ -9,10 +9,8 @@
 
 using namespace std;
 
-
-
 float *resolve( int dim, float low, float high,
-		float brange = 0.00, int nbgood =0, int population = 100, int iterations = 10000, bool debugMode=true){
+		float brange = 0.00, int nbgood =0, int population = 100, int iterations = 10000, bool debugMode=false){
 	/**
 	 * res :pointer to save the result
 	 * dim :dementsions of search space
@@ -50,10 +48,10 @@ float *resolve( int dim, float low, float high,
 	float randNo=0.0; 
 	
 	//configureations
-	int pgrid = population>1000? 1:int(population/200)+1;
-	int pblock = population>1000? population: 200 ;	
-	int ggrid = nbgood>1000? 1:int(nbgood/200)+1;
-	int gblock = nbgood>1000? nbgood:200;
+	int pgrid = population>1024? 1:int(population/512)+1;
+	int pblock = population>1024? population: 512 ;	
+	int ggrid = nbgood>1024? 1:int(nbgood/512)+1;
+	int gblock = nbgood>1024? nbgood:512;
 	
 	float  *obj, *sobj ;
 	cudaMalloc(&obj, sizeof(float)*population);
@@ -82,7 +80,7 @@ float *resolve( int dim, float low, float high,
 		objectiveFn<<<pgrid,pblock>>>(obj, bests, dim, pitch, nbgood, offset);
 		
 //		//////////////////////////////
-		if(debugMode){
+		if(debugMode ){
 					cout<<"before Rand"<<endl;
 					cudaMemcpy(recObj, obj, sizeof(float)*nbgood, cudaMemcpyHostToHost);
 					prnt(recObj, nbgood);
@@ -100,8 +98,8 @@ float *resolve( int dim, float low, float high,
 		cudaFree(bests);
 		bests = newBest;
 		newBest = NULL;
-		
-		if (debugMode){
+		////////////////////////////////////////
+		if (debugMode && false){
 
 					cout<<"sorted below"<<endl;
 					cudaMemcpy(recObj, sobj, sizeof(float)*nbgood, cudaMemcpyHostToHost);
@@ -116,7 +114,6 @@ float *resolve( int dim, float low, float high,
 		/////////////////////////////
 		cudaDeviceSynchronize();
 
-
 		randNo=rand()%1000/1000.0;
 		
 		
@@ -127,7 +124,7 @@ float *resolve( int dim, float low, float high,
 	    	noise =gen_random(gen, population, dim, &pitch, -1, 1 ); 
 	    	rndRecs = gen_random_indexes(gen, population, nbgood);
 //	    	//////////////////////////////////////////
-	    	if(debugMode){
+	    	if(debugMode && false){
 		    	cout<<endl;
 		    	free(recObj);
 		    	recObj= (float*)malloc(sizeof(float)*population);
@@ -140,13 +137,13 @@ float *resolve( int dim, float low, float high,
 	    										 rndRecs,0.0, population,dim, pitch);
 	    }
 	    else if (randNo> rpa){
-	    	choise =1;
+	    	choise =2;
 	    	cudaFree(noise);
 	    	cudaFree(rndRecs);
 	    	noise =gen_random(gen, population, dim, &pitch, -1, 1 ); 
 	    	rndRecs = gen_random_indexes(gen, population, nbgood);
 //	    	///////////////////////////////////////////
-	    	if(debugMode){
+	    	if(debugMode && false){
 				cout<<endl;
 				free(recObj);
 				recObj= (float*)malloc(sizeof(float)*population);
@@ -160,7 +157,7 @@ float *resolve( int dim, float low, float high,
 	    										 rndRecs,brange, population,dim, pitch);
 	    }
 	    else{
-	    	choise =1;
+	    	choise =3;
 	    	cudaFree(harmonics);
 	    	harmonics = gen_random(gen, population, dim, &pitch, low, high);
 	    }
@@ -168,7 +165,7 @@ float *resolve( int dim, float low, float high,
 
 	    
 	    //////////////////////////////////////////
-	    if(debugMode){
+	    if(debugMode && false){
 			cout<<endl;
 			free(idek);
 			idek = alloc2d(population, dim);
@@ -176,7 +173,7 @@ float *resolve( int dim, float low, float high,
 		    cudaMemcpy2D( &idek[0][0], dim*sizeof(float), harmonics, 
 		    					pitch*sizeof(float), dim*sizeof(float), 
 		    					population, cudaMemcpyDeviceToHost);
-		    prnt(idek, population, dim );
+		    prnt(idek, nbgood, dim );// only first nbgood 
 		    cout<<endl;
 
 	    }
@@ -214,12 +211,12 @@ float *resolve( int dim, float low, float high,
 	    
 	    cudaMemcpy(recObj, obj, sizeof(float)*nbgood, cudaMemcpyDeviceToHost);
 	    loss = avg_loss(recObj, nbgood);
-	    if (loss<prevLoss){
+	    if (true ){
 	    	printf("%d choise:%d   AVERAGE LOSS: %f\n", lolly, choise, loss);
 	    	prevLoss = loss; 
 	    }
 	   
-	    if(debugMode){
+	    if(debugMode && false){
 	    	cudaMemcpy2D( &idek[0][0], dim*sizeof(float), bests, pitch*sizeof(float), 
 								dim*sizeof(float), nbgood, cudaMemcpyDeviceToHost);
 	    	prnt(recObj, nbgood);
@@ -227,10 +224,10 @@ float *resolve( int dim, float low, float high,
 	    }
 	    
 	    
-		if(debugMode){			
-			system(" sleep 3");
+		//if(debugMode){			
+	//		system(" sleep 3");
 			
-		}
+		//}
 	
 		if (loss< nbgood*0.1 ){
 				break;
@@ -248,11 +245,12 @@ float *resolve( int dim, float low, float high,
 
 
 int main(){
+	
 	int iterations = 10000;
 	int dim = 128;
 	int low=-2000, high =2000; 	
-	int nbg = 8;
-	int pop = 128; //population
+	int nbg = 3;
+	int pop = 512; //population
 	float  *result;
 	int dm=0;
 	
