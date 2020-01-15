@@ -10,7 +10,7 @@ This repo contains a barly working CUDA implementation of [Harmonics Search Algo
 	- $ nvcc -lcurand -lcudadevrt  -rdc=true -arch=compute_35 
 	
 ## Compilation And Execution: 
-- To run simply compile: nvcc -lcurand -lcudadevrt  -rdc=true -arch=compute_35 -o exec two.cu
+- To run simply compile: nvcc -lcurand -lcudadevrt  -rdc=true -arch=compute_35 -o exec parallel.cu
 - To run : ./exec
 
 #Check out bugs section to find out known bugs or to correct them
